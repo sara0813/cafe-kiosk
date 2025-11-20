@@ -32,7 +32,9 @@ int main(void) {
             run_user_mode();
             break;
         case 2:
-            run_admin_mode();
+            if (admin_login()) {   // 로그인 성공 시에만
+                run_admin_mode();
+            }
             break;
         case 0:
             printf("Bye.\n");

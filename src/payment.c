@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include "cart.h"
 #include "payment.h"
+#include "order_log.h" 
 
 static void flush_input(void) {
     int ch;
@@ -172,6 +173,8 @@ int run_payment_flow(void) {
     }
 
     int order_no = next_order_no++;
+
+    write_order_log(order_no, total, method);
 
     // 3) 포인트 적립 (결제 후)
     if (ask_point()) {
