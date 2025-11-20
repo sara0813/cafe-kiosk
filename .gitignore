@@ -1,0 +1,9 @@
+# VSCode settings
+.vscode/
+
+# build outputs
+cafe_kiosk.exe
+*.o
+
+# logs
+data/logs/
