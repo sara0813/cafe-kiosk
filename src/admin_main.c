@@ -1,6 +1,7 @@
 // src/admin_main.c
 #include <stdio.h>
 #include "admin.h"
+#include "input.h"
 
 // functions implemented in other admin_*.c files
 void run_sales_menu(void);
@@ -26,8 +27,14 @@ void run_admin_mode(void) {
         printf("0. Back to main menu\n");
         printf("Select: ");
 
-        if (scanf("%d", &choice) != 1) {
-            flush_input();
+         int result = timed_read_int("Select: ", &choice,
+                                    INPUT_WARN_SEC, INPUT_TIMEOUT_SEC);
+
+        if (result == INPUT_TIMEOUT) {
+            printf("\nTimeout. Back to main menu.\n\n");
+            return;
+        }
+        if (result == INPUT_INVALID) {
             printf("Invalid input.\n\n");
             continue;
         }

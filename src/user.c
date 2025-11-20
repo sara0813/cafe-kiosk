@@ -4,15 +4,11 @@
 #include "cart.h"
 #include "user.h"
 #include "payment.h"
+#include "input.h"
 
 
 // ---------- internal helpers ----------
 
-static void flush_input(void) {
-    int ch;
-    while ((ch = getchar()) != '\n' && ch != EOF)
-        ;
-}
 
 static int select_category(void) {
     int cat;
@@ -27,16 +23,24 @@ static int select_category(void) {
     printf("7. Dessert\n");
     printf("0. Back (to main)\n");
     printf("------------------------\n");
-    printf("Select: ");
 
-    if (scanf("%d", &cat) != 1) {
-        flush_input();
+    int result = timed_read_int("Select: ", &cat,
+                                INPUT_WARN_SEC, INPUT_TIMEOUT_SEC);
+
+    if (result == INPUT_TIMEOUT) {
+        printf("\nTimeout. Back to main menu.\n\n");
+        // 0을 리턴하면 run_user_mode에서 메인으로 나감
+        return 0;
+    }
+    if (result == INPUT_INVALID) {
         printf("Invalid input.\n\n");
-        return -1;  // error
+        return -1;
     }
 
     return cat;
 }
+
+
 
 static const char *get_menu_filepath(int category) {
     switch (category) {
@@ -53,36 +57,58 @@ static const char *get_menu_filepath(int category) {
 
 static int select_menu_id(void) {
     int id;
-    printf("Enter menu id to order (0: back to category): ");
-    if (scanf("%d", &id) != 1) {
-        flush_input();
+    int result = timed_read_int(
+        "Enter menu id to order (0: back to category): ",
+        &id, INPUT_WARN_SEC, INPUT_TIMEOUT_SEC);
+
+    if (result == INPUT_TIMEOUT) {
+        printf("\nTimeout. Back to category.\n\n");
+        // 0은 "back to category" 의미
+        return 0;
+    }
+    if (result == INPUT_INVALID) {
         printf("Invalid input.\n\n");
         return -1;
     }
     return id;
 }
 
+
 static int select_quantity(void) {
     int qty;
-    printf("Quantity: ");
-    if (scanf("%d", &qty) != 1 || qty <= 0) {
-        flush_input();
+    int result = timed_read_int("Quantity: ", &qty,
+                                INPUT_WARN_SEC, INPUT_TIMEOUT_SEC);
+
+    if (result == INPUT_TIMEOUT) {
+        printf("\nTimeout. Cancel this item.\n\n");
+        // 음수나 0이면 run_user_mode에서 그냥 다시 루프
+        return -1;
+    }
+    if (result == INPUT_INVALID || qty <= 0) {
         printf("Invalid quantity.\n\n");
         return -1;
     }
     return qty;
 }
 
+
 // 메뉴 담은 뒤 "메뉴 추가 / 결제" 선택
 static int show_after_add_menu(void) {
     int choice;
+
     while (1) {
         printf("1. Add more menu\n");
         printf("2. Payment\n");
-        printf("Select: ");
 
-        if (scanf("%d", &choice) != 1) {
-            flush_input();
+        int result = timed_read_int("Select: ", &choice,
+                                    INPUT_WARN_SEC, INPUT_TIMEOUT_SEC);
+
+        if (result == INPUT_TIMEOUT) {
+            printf("\nTimeout. Order cancelled and back to main menu.\n\n");
+            cart_init();       // 장바구니 비우기
+            return 0;          // 0 = 전체 취소
+        }
+        if (result == INPUT_INVALID) {
             printf("Invalid input.\n\n");
             continue;
         }
@@ -93,6 +119,7 @@ static int show_after_add_menu(void) {
         printf("Please select 1 or 2.\n\n");
     }
 }
+
 
 
 // ---------- public ----------
@@ -154,30 +181,29 @@ void run_user_mode(void) {
             continue;
         }
 
-        cart_add(selected, qty);
+                cart_add(selected, qty);
         printf("\nAdded to cart: %s x%d\n\n", selected->name, qty);
 
-        // 장바구니 화면 (메뉴 추가 / 결제) 루프
+        // cart / payment loop
         while (1) {
             cart_print();
 
             int next = show_after_add_menu();
-            if (next == 1) {
-                // 메뉴 추가 → 바깥 while로 나가서 다시 카테고리 선택
+            if (next == 0) {
+                // timeout or user cancelled -> 메인으로
+                return;
+            } else if (next == 1) {
+                // add more
                 break;
             } else if (next == 2) {
-                // 결제 플로우 진입
                 int paid = run_payment_flow();
                 if (paid) {
-                    // 결제 성공 → 유저 모드 종료 (메인 화면으로)
-                    return;
+                    return;   // payment success -> 메인
                 } else {
-                    // 결제 취소 → 장바구니 화면으로 복귀
                     printf("\nPayment cancelled. Back to previous screen.\n\n");
-                    // 다시 cart_print + 메뉴 추가/결제 선택 반복
+                    // 다시 cart_print -> show_after_add_menu
                 }
             }
         }
-        // 여기서 다시 바깥 while(1) 위로 올라가서 카테고리 선택
     }
 }

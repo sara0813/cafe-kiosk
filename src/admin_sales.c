@@ -4,12 +4,6 @@
 
 #define ORDERS_LOG_PATH "data/logs/orders.log"
 
-static void flush_input(void) {
-    int ch;
-    while ((ch = getchar()) != '\n' && ch != EOF)
-        ;
-}
-
 static void show_sales_by_payment(void) {
     FILE *fp = fopen(ORDERS_LOG_PATH, "r");
     if (!fp) {
@@ -100,7 +94,6 @@ void run_sales_menu(void) {
         printf("Select: ");
 
         if (scanf("%d", &choice) != 1) {
-            flush_input();
             printf("Invalid input.\n\n");
             continue;
         }

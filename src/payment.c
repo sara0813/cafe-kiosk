@@ -3,12 +3,7 @@
 #include "cart.h"
 #include "payment.h"
 #include "order_log.h" 
-
-static void flush_input(void) {
-    int ch;
-    while ((ch = getchar()) != '\n' && ch != EOF)
-        ;
-}
+#include "input.h"
 
 // 결제 수단 선택
 // return: 1=Cash, 2=Card, 3=KakaoPay, 0=Cancel
@@ -21,10 +16,15 @@ static int select_payment_method(void) {
         printf("2. Card\n");
         printf("3. KakaoPay\n");
         printf("0. Cancel\n");
-        printf("Select: ");
 
-        if (scanf("%d", &method) != 1) {
-            flush_input();
+        int result = timed_read_int("Select: ", &method,
+                                    INPUT_WARN_SEC, INPUT_TIMEOUT_SEC);
+
+        if (result == INPUT_TIMEOUT) {
+            printf("\nTimeout. Payment cancelled.\n\n");
+            return 0;  // 0 = cancel
+        }
+        if (result == INPUT_INVALID) {
             printf("Invalid input.\n\n");
             continue;
         }
@@ -36,8 +36,7 @@ static int select_payment_method(void) {
     }
 }
 
-// 포인트 적립 여부 (결제 후)
-// return: 1 = 적립, 0 = 적립 안 함
+// return: 1 = save, 0 = not save
 static int ask_point(void) {
     int choice;
 
@@ -45,10 +44,15 @@ static int ask_point(void) {
         printf("\nDo you want to save points?\n");
         printf("1. Yes\n");
         printf("2. No\n");
-        printf("Select: ");
 
-        if (scanf("%d", &choice) != 1) {
-            flush_input();
+        int result = timed_read_int("Select: ", &choice,
+                                    INPUT_WARN_SEC, INPUT_TIMEOUT_SEC);
+
+        if (result == INPUT_TIMEOUT) {
+            printf("\nTimeout. Skip point saving.\n\n");
+            return 0;  // 그냥 적립 안 하고 진행
+        }
+        if (result == INPUT_INVALID) {
             printf("Invalid input.\n\n");
             continue;
         }
@@ -62,18 +66,13 @@ static int ask_point(void) {
     return (choice == 1);
 }
 
+
 // 전화번호 입력 (숫자만 11자리)
 static void save_point(void) {
     char phone[32];
 
     while (1) {
         printf("Enter your phone number (11 digits): ");
-
-        if (scanf("%31s", phone) != 1) {
-            flush_input();
-            printf("Invalid input.\n\n");
-            continue;
-        }
 
         int len = 0;
         int ok = 1;
@@ -106,10 +105,16 @@ static void ask_receipt_and_print(int order_no) {
         printf("\nDo you want a receipt?\n");
         printf("1. Yes\n");
         printf("2. No\n");
-        printf("Select: ");
 
-        if (scanf("%d", &choice) != 1) {
-            flush_input();
+        int result = timed_read_int("Select: ", &choice,
+                                    INPUT_WARN_SEC, INPUT_TIMEOUT_SEC);
+
+        if (result == INPUT_TIMEOUT) {
+            printf("\nTimeout. No receipt.\n");
+            choice = 2;   // 영수증 없이 진행
+            break;
+        }
+        if (result == INPUT_INVALID) {
             printf("Invalid input.\n");
             continue;
         }
@@ -122,13 +127,14 @@ static void ask_receipt_and_print(int order_no) {
 
     if (choice == 1) {
         printf("\n===== Receipt =====\n");
-        cart_print();                 // 장바구니 내용 그대로 영수증처럼 출력
+        cart_print();
         printf("Waiting number: %d\n", order_no);
         printf("===================\n");
     } else {
         printf("\nWaiting number: %d\n", order_no);
     }
 }
+
 
 // 결제 전체 플로우
 // 결제 완료: 1, 취소: 0

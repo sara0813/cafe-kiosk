@@ -3,12 +3,6 @@
 #include <string.h>
 #include "admin.h"
 
-static void flush_input(void) {
-    int ch;
-    while ((ch = getchar()) != '\n' && ch != EOF)
-        ;
-}
-
 #define ADMIN_ID "team2"
 #define ADMIN_PW "1234"
 
@@ -23,14 +17,12 @@ int admin_login(void) {
 
         printf("ID: ");
         if (scanf("%31s", id) != 1) {
-            flush_input();
             printf("Invalid input.\n\n");
             continue;
         }
 
         printf("Password: ");
         if (scanf("%31s", pw) != 1) {
-            flush_input();
             printf("Invalid input.\n\n");
             continue;
         }

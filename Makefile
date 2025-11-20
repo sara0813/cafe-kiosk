@@ -20,6 +20,7 @@ SRCS = \
     src/payment.c \
     src/price.c \
     src/order_log.c \
+    src/input.c \
     src/admin_login.c \
     src/admin_main.c \
     src/admin_sales.c \
