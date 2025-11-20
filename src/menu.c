@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "menu.h"
+#include "price.h"
 
 int load_menu(const char *filepath, MenuItem *items, int max_count) {
     FILE *fp = fopen(filepath, "r");
@@ -34,11 +35,14 @@ int load_menu(const char *filepath, MenuItem *items, int max_count) {
     return count;
 }
 
-void print_menu(const MenuItem *items, int count) {
+void print_menu(const MenuItem items[], int count) {
     printf("==== Menu ====\n");
     for (int i = 0; i < count; i++) {
-        printf("%2d. %s  (%d won)\n",
-               items[i].id, items[i].name, items[i].price);
+        char price_str[32];
+        format_price_with_comma(items[i].price, price_str, sizeof(price_str));
+
+        printf("%2d. %s  (%s won)\n",
+               items[i].id, items[i].name, price_str);
     }
     printf("==============\n\n");
 }

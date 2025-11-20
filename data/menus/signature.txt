@@ -1,8 +1,8 @@
-1, Iced Passion Grapefruit (Yogurt Ice Cream + Homemade Syrup + Grapefruit),7.000
-2, Iced Red Bean Cup Bingsu,7.300
-3, Iced Protein Shake (Grain Flavor),6.500
-4, Blue Latte,6.300
-5, Sweet Corn Cream Latte,6.300
-6, Salted Caramel Latte,6.800
-7, Coconut Einspanner,6.800
-8, Einspanner,6.500
+1, Iced Passion Grapefruit,7000
+2, Iced Red Bean Cup Bingsu,7300
+3, Iced Protein Shake,6500
+4, Blue Latte,6300
+5, Sweet Corn Cream Latte,6300
+6, Salted Caramel Latte,6800
+7, Coconut Einspanner,6800
+8, Einspanner,6500

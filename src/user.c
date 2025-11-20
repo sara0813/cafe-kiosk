@@ -62,7 +62,6 @@ static int select_menu_id(void) {
     return id;
 }
 
-
 static int select_quantity(void) {
     int qty;
     printf("Quantity: ");
@@ -79,7 +78,7 @@ static int show_after_add_menu(void) {
     int choice;
     while (1) {
         printf("1. Add more menu\n");
-        printf("2. Checkout\n");
+        printf("2. Payment\n");
         printf("Select: ");
 
         if (scanf("%d", &choice) != 1) {
@@ -95,13 +94,15 @@ static int show_after_add_menu(void) {
     }
 }
 
+
 // ---------- public ----------
+
 void run_user_mode(void) {
     cart_init();  // 유저 모드 들어올 때마다 장바구니 초기화
 
     while (1) {
         int category = select_category();
-        if (category == -1) {// 잘못된 입력 → 다시 카테고리 선택
+        if (category == -1) { // 잘못된 입력 → 다시 카테고리 선택
             continue;
         }
         if (category == 0) {
@@ -156,16 +157,27 @@ void run_user_mode(void) {
         cart_add(selected, qty);
         printf("\nAdded to cart: %s x%d\n\n", selected->name, qty);
 
-        cart_print();
+        // 장바구니 화면 (메뉴 추가 / 결제) 루프
+        while (1) {
+            cart_print();
 
-        int next = show_after_add_menu();
-        if (next == 1) {
-            // 메뉴 추가 → while 루프 처음으로 (다시 카테고리 선택)
-            continue;
-        } else if (next == 2) {
-            // 결제 → 결제 플로우로 들어가고, 끝나면 User mode 종료
-            run_payment_flow();
-            return;
+            int next = show_after_add_menu();
+            if (next == 1) {
+                // 메뉴 추가 → 바깥 while로 나가서 다시 카테고리 선택
+                break;
+            } else if (next == 2) {
+                // 결제 플로우 진입
+                int paid = run_payment_flow();
+                if (paid) {
+                    // 결제 성공 → 유저 모드 종료 (메인 화면으로)
+                    return;
+                } else {
+                    // 결제 취소 → 장바구니 화면으로 복귀
+                    printf("\nPayment cancelled. Back to previous screen.\n\n");
+                    // 다시 cart_print + 메뉴 추가/결제 선택 반복
+                }
+            }
         }
+        // 여기서 다시 바깥 while(1) 위로 올라가서 카테고리 선택
     }
 }

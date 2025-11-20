@@ -1,6 +1,6 @@
-1, Peach Iced Tea,5.000
-2, Hot Chocolate,5.000
-3, Chocolate Latte,5.500
-4, Sweet Potato Latte,5.800
-5, Matcha Latte,5.800
-6, Black Tea Latte,5.800
+1, Peach Iced Tea,5000
+2, Hot Chocolate,5000
+3, Chocolate Latte,5500
+4, Sweet Potato Latte,5800
+5, Matcha Latte,5800
+6, Black Tea Latte,5800

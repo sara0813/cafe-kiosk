@@ -1,9 +1,13 @@
 // src/cart.c
 #include <stdio.h>
 #include "cart.h"
+#include "price.h"
+
 
 static CartItem cart[MAX_CART_ITEMS];
 static int cart_count = 0;
+
+#include <stdio.h>
 
 void cart_init(void) {
     cart_count = 0;
@@ -51,9 +55,18 @@ void cart_print(void) {
     printf("==== Cart ====\n");
     for (int i = 0; i < cart_count; i++) {
         int line = cart[i].item.price * cart[i].quantity;
-        printf("%2d. %s x%d  (%d won)\n",
-               i + 1, cart[i].item.name, cart[i].quantity, line);
+
+        char price_str[32];
+        format_price_with_comma(line, price_str, sizeof(price_str));
+
+        printf("%2d. %s x%d  (%s won)\n",
+               i + 1, cart[i].item.name, cart[i].quantity, price_str);
     }
-    printf("Total: %d won\n", cart_total_price());
+
+    int total = cart_total_price();
+    char total_str[32];
+    format_price_with_comma(total, total_str, sizeof(total_str));
+
+    printf("Total: %s won\n", total_str);
     printf("==============\n\n");
 }

@@ -1,5 +1,5 @@
-1, Dutch Coffee,5.300
-2, Dutch Latte,5.800
-3, Dutch Vanilla Latte,6.300
-4, Dutch Condensed Milk Latte,6.300
+1, Dutch Coffee,5300
+2, Dutch Latte,5800
+3, Dutch Vanilla Latte,6300
+4, Dutch Condensed Milk Latte,6300
 

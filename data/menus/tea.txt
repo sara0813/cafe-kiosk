@@ -1,10 +1,10 @@
-1, Peppermint Tea,5.300
-2, Earl Grey Tea,5.300
-3, Chamomile Tea,5.300
-4, Chrysanthemum Tea,5.300
-5, Rosehip Tea,5.300
-6, Jasmine Tea,5.300
-7, Rooibos Tea,5.300
-8, Hibiscus Tea,5.300
-9, Rosemary Tea,5.300
+1, Peppermint Tea,5300
+2, Earl Grey Tea,5300
+3, Chamomile Tea,5300
+4, Chrysanthemum Tea,5300
+5, Rosehip Tea,5300
+6, Jasmine Tea,5300
+7, Rooibos Tea,5300
+8, Hibiscus Tea,5300
+9, Rosemary Tea,5300
 
