@@ -1,8 +1,8 @@
-29, Ice 패션자몽(요거트아니스크림+수제청+자몽) ,7.000 
-30, ICE 통팥컵빙수, 7.300
-31, ICE 프로틴 쉐이크(곡물맛),6.500
-32, 블루라떼, 6.300
-33, 초당옥수수 크림라떼, 6.300
-34, 솔트카라멜, 6.800
-35, 코코넛슈페너, 6.800
-36, 아인슈페너, 6.500
+1, Iced Passion Grapefruit (Yogurt Ice Cream + Homemade Syrup + Grapefruit),7.000
+2, Iced Red Bean Cup Bingsu,7.300
+3, Iced Protein Shake (Grain Flavor),6.500
+4, Blue Latte,6.300
+5, Sweet Corn Cream Latte,6.300
+6, Salted Caramel Latte,6.800
+7, Coconut Einspanner,6.800
+8, Einspanner,6.500

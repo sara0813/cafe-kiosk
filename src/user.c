@@ -1,10 +1,21 @@
 // src/user.c
 #include <stdio.h>
 #include "menu.h"
+#include "cart.h"
+#include "user.h"
+#include "payment.h"
 
-void run_user_mode(void) {
+
+// ---------- internal helpers ----------
+
+static void flush_input(void) {
+    int ch;
+    while ((ch = getchar()) != '\n' && ch != EOF)
+        ;
+}
+
+static int select_category(void) {
     int cat;
-    const char *filepath = NULL;
 
     printf("=== Select Category ===\n");
     printf("1. Coffee\n");
@@ -14,45 +25,147 @@ void run_user_mode(void) {
     printf("5. Signature\n");
     printf("6. Smoothie / Juice\n");
     printf("7. Dessert\n");
-    printf("0. Back\n");
+    printf("0. Back (to main)\n");
     printf("------------------------\n");
     printf("Select: ");
 
     if (scanf("%d", &cat) != 1) {
-        int ch;
-        while ((ch = getchar()) != '\n' && ch != EOF)
-            ;
+        flush_input();
         printf("Invalid input.\n\n");
-        return;
+        return -1;  // error
     }
 
-    switch (cat) {
-    case 1: filepath = "data/menus/coffee.txt"; break;
-    case 2: filepath = "data/menus/noncoffee.txt"; break;
-    case 3: filepath = "data/menus/tea.txt"; break;
-    case 4: filepath = "data/menus/dutch.txt"; break;
-    case 5: filepath = "data/menus/signature.txt"; break;
-    case 6: filepath = "data/menus/smoothie_juice.txt"; break;
-    case 7: filepath = "data/menus/dessert.txt"; break;
-    case 0:
-        printf("\n");
-        return;
-    default:
-        printf("No such category.\n\n");
-        return;
+    return cat;
+}
+
+static const char *get_menu_filepath(int category) {
+    switch (category) {
+    case 1: return "data/menus/coffee.txt";
+    case 2: return "data/menus/noncoffee.txt";
+    case 3: return "data/menus/tea.txt";
+    case 4: return "data/menus/dutch.txt";
+    case 5: return "data/menus/signature.txt";
+    case 6: return "data/menus/smoothie_juice.txt";
+    case 7: return "data/menus/dessert.txt";
+    default: return NULL;
     }
+}
 
-    MenuItem items[MAX_MENU_ITEMS];
-    int count = load_menu(filepath, items, MAX_MENU_ITEMS);
-    if (count <= 0) {
-        printf("Failed to load menu from %s\n\n", filepath);
-        return;
+static int select_menu_id(void) {
+    int id;
+    printf("Enter menu id to order (0: back to category): ");
+    if (scanf("%d", &id) != 1) {
+        flush_input();
+        printf("Invalid input.\n\n");
+        return -1;
     }
+    return id;
+}
 
-    print_menu(items, count);
 
-    // TODO: next step
-    // - select menu
-    // - add to cart
-    // - go to payment
+static int select_quantity(void) {
+    int qty;
+    printf("Quantity: ");
+    if (scanf("%d", &qty) != 1 || qty <= 0) {
+        flush_input();
+        printf("Invalid quantity.\n\n");
+        return -1;
+    }
+    return qty;
+}
+
+// 메뉴 담은 뒤 "메뉴 추가 / 결제" 선택
+static int show_after_add_menu(void) {
+    int choice;
+    while (1) {
+        printf("1. Add more menu\n");
+        printf("2. Checkout\n");
+        printf("Select: ");
+
+        if (scanf("%d", &choice) != 1) {
+            flush_input();
+            printf("Invalid input.\n\n");
+            continue;
+        }
+
+        if (choice == 1 || choice == 2)
+            return choice;
+
+        printf("Please select 1 or 2.\n\n");
+    }
+}
+
+// ---------- public ----------
+void run_user_mode(void) {
+    cart_init();  // 유저 모드 들어올 때마다 장바구니 초기화
+
+    while (1) {
+        int category = select_category();
+        if (category == -1) {// 잘못된 입력 → 다시 카테고리 선택
+            continue;
+        }
+        if (category == 0) {
+            // 메인 화면으로
+            printf("\n");
+            return;
+        }
+
+        const char *filepath = get_menu_filepath(category);
+        if (!filepath) {
+            printf("No such category.\n\n");
+            continue;
+        }
+
+        MenuItem items[MAX_MENU_ITEMS];
+        int count = load_menu(filepath, items, MAX_MENU_ITEMS);
+        if (count <= 0) {
+            printf("Failed to load menu from %s\n\n", filepath);
+            continue;
+        }
+
+        print_menu(items, count);
+
+        int id = select_menu_id();
+        if (id == -1) {
+            continue; // invalid
+        }
+        if (id == 0) {
+            // 카테고리로 돌아가기
+            printf("\n");
+            continue;
+        }
+
+        const MenuItem *selected = NULL;
+        for (int i = 0; i < count; i++) {
+            if (items[i].id == id) {
+                selected = &items[i];
+                break;
+            }
+        }
+
+        if (!selected) {
+            printf("No such menu id.\n\n");
+            continue;
+        }
+
+        int qty = select_quantity();
+        if (qty <= 0) {
+            continue;
+        }
+
+        cart_add(selected, qty);
+        printf("\nAdded to cart: %s x%d\n\n", selected->name, qty);
+
+        cart_print();
+
+        int next = show_after_add_menu();
+        if (next == 1) {
+            // 메뉴 추가 → while 루프 처음으로 (다시 카테고리 선택)
+            continue;
+        } else if (next == 2) {
+            // 결제 → 결제 플로우로 들어가고, 끝나면 User mode 종료
+            run_payment_flow();
+            return;
+        }
+    }
 }

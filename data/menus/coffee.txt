@@ -1,10 +1,10 @@
-1, 에스프레소,4.500
-2, 아메리카노,4.800
-3, 카페라떼,5.300
-4, 카푸치노,5.300
-5, 카페모카,5.800
-6, 바닐라라떼,5.800
-7, 카라멜마끼아또,5.800
-8, 아포가토,6.500
-9, ice 코코넛커피,7.300
-10, ice 피쳐 아메리카노,8.000
+1, Espresso,4.500
+2, Americano,4.800
+3, Caffe Latte,5.300
+4, Cappuccino,5.300
+5, Caffe Mocha,5.800
+6, Vanilla Latte,5.800
+7, Caramel Macchiato,5.800
+8, Affogato,6.500
+9, Iced Coconut Coffee,7.300
+10, Iced Pitcher Americano,8.000

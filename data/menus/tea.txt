@@ -1,10 +1,10 @@
-45, 페퍼민트,5.300
-46, 얼그레이,5.300
-47, 캐모마일,5.300
-48, 국화차,5.300
-49, 로즈힙,5.300
-50, 자스민,5.300
-51, 루이보스,5.300
-52, 히비스커스,5.300
-53, 로즈마리,5.300
-54, 잉글리쉬 블렉퍼스트,5.300
+1, Peppermint Tea,5.300
+2, Earl Grey Tea,5.300
+3, Chamomile Tea,5.300
+4, Chrysanthemum Tea,5.300
+5, Rosehip Tea,5.300
+6, Jasmine Tea,5.300
+7, Rooibos Tea,5.300
+8, Hibiscus Tea,5.300
+9, Rosemary Tea,5.300
+

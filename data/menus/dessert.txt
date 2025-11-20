@@ -1,8 +1,8 @@
-치즈케이크,6.800
-딸기 치즈 케이크,7.000
-얼그레이 치즈케이크,7.000
-고구마 치즈케이크,7.000
-말차 치즈케이크, 7.000
-블랙 치즈케이크, 6.500
-수제 브라우니,5.000
-브라우니 아이스크림,7.000
+1, Cheesecake,6.800
+2, Strawberry Cheesecake,7.000
+3, Earl Grey Cheesecake,7.000
+4, Sweet Potato Cheesecake,7.000
+5, Matcha Cheesecake,7.000
+6, Black Cheesecake,6.500
+7, Homemade Brownie,5.000
+8, Brownie Ice Cream,7.000
