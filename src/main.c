@@ -1,7 +1,7 @@
+// src/main.c
 #include <stdio.h>
-
-void run_user_mode(void);
-void run_admin_mode(void);
+#include "user.h"
+#include "admin.h"
 
 int main(void) {
     int choice;
@@ -10,7 +10,7 @@ int main(void) {
         printf("=================================\n");
         printf("          Cafe Kiosk\n");
         printf("=================================\n");
-        printf("1. Order (User)\n");
+        printf("1. User mode (Order)\n");
         printf("2. Admin mode\n");
         printf("0. Exit\n");
         printf("---------------------------------\n");
@@ -44,12 +44,4 @@ int main(void) {
     }
 
     return 0;
-}
-
-void run_user_mode(void) {
-    printf("[User mode] (not implemented yet)\n\n");
-}
-
-void run_admin_mode(void) {
-    printf("[Admin mode] (not implemented yet)\n\n");
 }
