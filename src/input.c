@@ -11,15 +11,16 @@
 
 // 키보드 입력이 준비될 때까지 대기
 static int wait_for_input(int warn_sec, int timeout_sec) {
+    fflush(stdout);
     int elapsed = 0;
     int warned = 0;
 
     while (elapsed < timeout_sec) {
-        if (_kbhit()) {   // 키가 눌렸으면 입력 준비됨
+        if (_kbhit()) {
             return 1;
         }
 
-        Sleep(1000);      // 1초 대기
+        Sleep(1000);
         elapsed++;
 
         if (!warned && elapsed >= warn_sec) {
@@ -128,11 +129,6 @@ int timed_read_int(const char *prompt, int *out,
     return INPUT_OK;
 }
 
-/*
- * 문자열을 타임아웃 붙여서 읽는 공통 함수
- *  - 경고/타임아웃 메시지는 위의 wait_for_input()에서 동일하게 처리됨
- *  - 개행 문자('\n')는 제거해서 돌려줌
- */
 int timed_read_line(const char *prompt, char *buf, size_t size,
                     int warn_sec, int timeout_sec) {
     if (prompt) {

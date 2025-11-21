@@ -3,7 +3,7 @@
 #include <string.h>
 #include "cart.h"
 #include "payment.h"
-#include "order_log.h" 
+#include "order_log.h"
 #include "input.h"
 
 // 결제 수단 선택
@@ -156,8 +156,9 @@ static void ask_receipt_and_print(int order_no) {
 
 
 // 결제 전체 플로우
+// order_place: 1 = 매장, 2 = 포장
 // 결제 완료: 1, 취소: 0
-int run_payment_flow(void) {
+int run_payment_flow(int order_place) {
     if (cart_is_empty()) {
         printf("Cart is empty. Nothing to pay.\n\n");
         return 0;
@@ -199,7 +200,8 @@ int run_payment_flow(void) {
 
     int order_no = next_order_no++;
 
-    write_order_log(order_no, total, method);
+    // order_place: 1 = HERE, 2 = TOGO (상세한 문자열 변환은 order_log.c에서 처리)
+    write_order_log(order_no, total, method, order_place);
 
     // 3) 포인트 적립 (결제 후)
     if (ask_point()) {

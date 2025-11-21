@@ -14,11 +14,9 @@
 #define INPUT_TIMEOUT_SEC  13   
 
 // 정수 입력
-int timed_read_int(const char *prompt, int *out,
-                   int warn_sec, int timeout_sec);
+int timed_read_int(const char *prompt, int *out, int warn_sec, int timeout_sec);
 
 // 한 줄 문자열 입력
-int timed_read_line(const char *prompt, char *buf, size_t size,
-                    int warn_sec, int timeout_sec);
+int timed_read_line(const char *prompt, char *buf, size_t size, int warn_sec, int timeout_sec);
 
 #endif

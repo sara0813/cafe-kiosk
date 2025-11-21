@@ -149,6 +149,37 @@ static int show_after_add_menu(void) {
     }
 }
 
+static int select_order_place(void) {
+    int choice;
+    int result;
+
+    while (1) {
+        printf("=== Order type ===\n");
+        printf("1. For here\n");
+        printf("2. To go\n");
+        printf("0. Back\n");
+        printf("------------------\n");
+
+        result = timed_read_int("Select: ", &choice,
+                                INPUT_WARN_SEC, INPUT_TIMEOUT_SEC);
+
+        if (result == INPUT_TIMEOUT) {
+            printf("\nTimeout. Cancel order type selection.\n\n");
+            return 0;   // 주문 방식 선택만 취소
+        }
+        if (result == INPUT_INVALID) {
+            printf("Invalid input. Please enter number.\n\n");
+            continue;
+        }
+
+        if (choice < 0 || choice > 2) {
+            printf("Please select 0~2.\n\n");
+            continue;
+        }
+
+        return choice; // 0, 1, 2
+    }
+}
 
 
 // ---------- public ----------
@@ -206,7 +237,6 @@ void run_user_mode(void) {
         // 4) 수량 선택
         int qty = select_quantity();
         if (qty <= 0) {
-            // 이 아이템만 취소하고 다시 카테고리부터
             continue;
         }
 
@@ -226,7 +256,21 @@ void run_user_mode(void) {
                 // add more -> 카테고리 선택부터 다시
                 break;
             } else if (next == 2) {
-                int paid = run_payment_flow();
+                // === 여기서 먼저 '먹고가기 / 포장' 선택 ===
+                int place = select_order_place();
+                if (place == 0) {
+                    // 주문 방식 선택만 취소 -> 장바구니 화면으로 돌아가기
+                    printf("\nOrder type selection cancelled. Back to previous screen.\n\n");
+                    continue;
+                }
+
+                if (place == 1) {
+                    printf("\nOrder type: For here\n");
+                } else if (place == 2) {
+                    printf("\nOrder type: To go\n");
+                }
+
+                int paid = run_payment_flow(place);
                 if (paid) {
                     return;
                 } else {

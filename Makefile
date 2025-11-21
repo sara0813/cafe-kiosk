@@ -46,4 +46,5 @@ run: all
 
 # 생성 파일 지우기
 clean:
-	$(RM) $(OBJS) $(TARGET)
+	del /Q src\*.o 2>nul
+	del /Q cafe_kiosk.exe 2>nul

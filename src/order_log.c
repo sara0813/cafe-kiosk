@@ -3,36 +3,57 @@
 #include <time.h>
 #include "order_log.h"
 
+#define ORDERS_LOG_PATH "data/logs/orders.log"
+
+// 결제 수단 번호 -> 로그용 문자열
 static const char *get_method_name(int method) {
     switch (method) {
-    case 1: return "Cash";
-    case 2: return "Card";
-    case 3: return "KakaoPay";
-    default: return "Unknown";
+    case 1: return "CASH";
+    case 2: return "CARD";
+    case 3: return "KAKAOPAY";
+    default: return "UNKNOWN";
     }
 }
 
-void write_order_log(int order_no, int total, int payment_method) {
-    FILE *fp = fopen("data/logs/orders.log", "a");
+// 주문 장소 번호 -> 로그용 문자열
+static const char *get_place_name(int order_place) {
+    switch (order_place) {
+    case 1: return "HERE";      // 매장
+    case 2: return "TOGO";      // 포장
+    default: return "UNKNOWN";
+    }
+}
+
+// 주문 로그 기록
+// 성공: 1, 실패: 0
+int write_order_log(int order_no, int total, int method, int order_place) {
+    FILE *fp = fopen(ORDERS_LOG_PATH, "a");
     if (!fp) {
-        perror("orders.log open failed");
-        return;
+        // 파일 열기 실패
+        return 0;
     }
 
+    const char *method_str = get_method_name(method);
+    const char *place_str  = get_place_name(order_place);
+
+    // 현재 시간 문자열 만들기
     time_t now = time(NULL);
-    struct tm *t = localtime(&now);
-    if (!t) {
-        fclose(fp);
-        return;
+    struct tm *tmv = localtime(&now);
+
+    char tbuf[32];
+    if (tmv) {
+        strftime(tbuf, sizeof(tbuf), "%Y-%m-%d %H:%M:%S", tmv);
+    } else {
+        // localtime 실패 시 대비
+        snprintf(tbuf, sizeof(tbuf), "unknown-time");
     }
 
-    // 날짜/시간 + 주문 정보 한 줄로 기록
-    fprintf(fp, "%04d-%02d-%02d %02d:%02d:%02d, ",
-            t->tm_year + 1900, t->tm_mon + 1, t->tm_mday,
-            t->tm_hour, t->tm_min, t->tm_sec);
-
-    fprintf(fp, "order=%d, method=%s, total=%d\n",
-            order_no, get_method_name(payment_method), total);
+    // 예:
+    // time=2025-11-21 13:40:01, order=3, total=6000, method=CARD, place=HERE
+    fprintf(fp,
+        "time=%s, order=%d, total=%d, method=%s, place=%s\n",
+        tbuf, order_no, total, method_str, place_str);
 
     fclose(fp);
+    return 1;
 }

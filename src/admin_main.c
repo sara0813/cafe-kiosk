@@ -11,18 +11,18 @@ void run_refund_menu(void);
 
 void run_admin_mode(void) {
     int choice;
+    int result;
 
     while (1) {
         printf("=== Admin Mode ===\n");
-        printf("1. Sales management (by payment/menu/log)\n");
+        printf("1. Sales / Statistics\n");
         printf("2. Menu / price edit\n");
         printf("3. Stock management\n");
-        printf("4. Refund\n");
+        printf("4. Order / refund management\n");
         printf("0. Back to main menu\n");
-        printf("Select: ");
 
-         int result = timed_read_int("Select: ", &choice,
-                                    INPUT_WARN_SEC, INPUT_TIMEOUT_SEC);
+        result = timed_read_int("Select: ", &choice,
+                                INPUT_WARN_SEC, INPUT_TIMEOUT_SEC);
 
         if (result == INPUT_TIMEOUT) {
             printf("\nTimeout. Back to main menu.\n\n");
