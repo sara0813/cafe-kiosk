@@ -10,8 +10,8 @@
 #define INPUT_TIMEOUT  2
 
 // 경고 / 타임아웃 기본 시간(초)
-#define INPUT_WARN_SEC     5   // 5초 동안 아무 입력 없으면 경고
-#define INPUT_TIMEOUT_SEC  8   // 총 8초 지나면 화면 취소
+#define INPUT_WARN_SEC     10   
+#define INPUT_TIMEOUT_SEC  13   
 
 // 정수 입력
 int timed_read_int(const char *prompt, int *out,
