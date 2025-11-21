@@ -1,6 +1,3 @@
-# Makefile (Windows + Linux 공용)
-
-# OS에 따라 실행 파일 이름 / 삭제 명령 다르게 설정
 ifeq ($(OS),Windows_NT)
     EXE_EXT = .exe
     RM = del /Q

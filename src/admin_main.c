@@ -9,12 +9,6 @@ void run_menu_edit_menu(void);
 void run_stock_menu(void);
 void run_refund_menu(void);
 
-static void flush_input(void) {
-    int ch;
-    while ((ch = getchar()) != '\n' && ch != EOF)
-        ;
-}
-
 void run_admin_mode(void) {
     int choice;
 

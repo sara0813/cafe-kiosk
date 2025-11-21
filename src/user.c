@@ -9,38 +9,46 @@
 
 // ---------- internal helpers ----------
 
-
+// 카테고리 선택 (0~7)
+//  0 : 메인으로 (Back)
+//  1~7 : 정상 카테고리
 static int select_category(void) {
     int cat;
+    int result;
 
-    printf("=== Select Category ===\n");
-    printf("1. Coffee\n");
-    printf("2. Non-coffee\n");
-    printf("3. Tea\n");
-    printf("4. Dutch\n");
-    printf("5. Signature\n");
-    printf("6. Smoothie / Juice\n");
-    printf("7. Dessert\n");
-    printf("0. Back (to main)\n");
-    printf("------------------------\n");
+    while (1) {
+        printf("=== Select Category ===\n");
+        printf("1. Coffee\n");
+        printf("2. Non-coffee\n");
+        printf("3. Tea\n");
+        printf("4. Dutch\n");
+        printf("5. Signature\n");
+        printf("6. Smoothie / Juice\n");
+        printf("7. Dessert\n");
+        printf("0. Back (to main)\n");
+        printf("------------------------\n");
 
-    int result = timed_read_int("Select: ", &cat,
+        result = timed_read_int("Select: ", &cat,
                                 INPUT_WARN_SEC, INPUT_TIMEOUT_SEC);
 
-    if (result == INPUT_TIMEOUT) {
-        printf("\nTimeout. Back to main menu.\n\n");
-        // 0을 리턴하면 run_user_mode에서 메인으로 나감
-        return 0;
-    }
-    if (result == INPUT_INVALID) {
-        printf("Invalid input.\n\n");
-        return -1;
-    }
+        if (result == INPUT_TIMEOUT) {
+            printf("\nTimeout. Back to main menu.\n\n");
+            // run_user_mode에서 바로 메인으로 나가게 0 반환
+            return 0;
+        }
+        if (result == INPUT_INVALID) {
+            printf("Invalid input. Please enter number.\n\n");
+            continue;   // 다시 카테고리 화면
+        }
 
-    return cat;
+        if (cat < 0 || cat > 7) {
+            printf("Please select 0~7.\n\n");
+            continue;   // 다시 선택
+        }
+
+        return cat;     // 0~7 중 하나
+    }
 }
-
-
 
 static const char *get_menu_filepath(int category) {
     switch (category) {
@@ -55,61 +63,82 @@ static const char *get_menu_filepath(int category) {
     }
 }
 
+// 메뉴 id 선택 (0: 카테고리로)
 static int select_menu_id(void) {
     int id;
-    int result = timed_read_int(
-        "Enter menu id to order (0: back to category): ",
-        &id, INPUT_WARN_SEC, INPUT_TIMEOUT_SEC);
+    int result;
 
-    if (result == INPUT_TIMEOUT) {
-        printf("\nTimeout. Back to category.\n\n");
-        // 0은 "back to category" 의미
-        return 0;
+    while (1) {
+        result = timed_read_int(
+            "Enter menu id to order (0: back to category): ",
+            &id, INPUT_WARN_SEC, INPUT_TIMEOUT_SEC);
+
+        if (result == INPUT_TIMEOUT) {
+            printf("\nTimeout. Back to category.\n\n");
+            return 0;   // 0 = 카테고리로 돌아감
+        }
+        if (result == INPUT_INVALID) {
+            printf("Invalid input. Please enter number.\n\n");
+            continue;
+        }
+
+        if (id < 0) {
+            printf("Invalid id.\n\n");
+            continue;
+        }
+
+        return id;  // 0 or positive
     }
-    if (result == INPUT_INVALID) {
-        printf("Invalid input.\n\n");
-        return -1;
-    }
-    return id;
 }
-
 
 static int select_quantity(void) {
     int qty;
-    int result = timed_read_int("Quantity: ", &qty,
+    int result;
+
+    while (1) {
+        result = timed_read_int("Quantity: ", &qty,
                                 INPUT_WARN_SEC, INPUT_TIMEOUT_SEC);
 
-    if (result == INPUT_TIMEOUT) {
-        printf("\nTimeout. Cancel this item.\n\n");
-        // 음수나 0이면 run_user_mode에서 그냥 다시 루프
-        return -1;
+        if (result == INPUT_TIMEOUT) {
+            printf("\nTimeout. Cancel this item.\n\n");
+            // 이 아이템만 취소, 상위 루프에서 continue
+            return -1;
+        }
+        if (result == INPUT_INVALID) {
+            printf("Invalid input. Please enter number.\n\n");
+            continue;
+        }
+        if (qty <= 0) {
+            printf("Invalid quantity. Must be >= 1.\n\n");
+            continue;
+        }
+        return qty;
     }
-    if (result == INPUT_INVALID || qty <= 0) {
-        printf("Invalid quantity.\n\n");
-        return -1;
-    }
-    return qty;
 }
 
 
 // 메뉴 담은 뒤 "메뉴 추가 / 결제" 선택
+//  0 : 전체 주문 취소하고 메인으로
+//  1 : 메뉴 더 담기
+//  2 : 결제 진행
 static int show_after_add_menu(void) {
     int choice;
+    int result;
 
     while (1) {
         printf("1. Add more menu\n");
         printf("2. Payment\n");
 
-        int result = timed_read_int("Select: ", &choice,
-                                    INPUT_WARN_SEC, INPUT_TIMEOUT_SEC);
+        result = timed_read_int("Select: ", &choice,
+                                INPUT_WARN_SEC, INPUT_TIMEOUT_SEC);
 
         if (result == INPUT_TIMEOUT) {
             printf("\nTimeout. Order cancelled and back to main menu.\n\n");
             cart_init();       // 장바구니 비우기
-            return 0;          // 0 = 전체 취소
+            return 0;          // 전체 취소
         }
         if (result == INPUT_INVALID) {
-            printf("Invalid input.\n\n");
+            printf("Invalid input. Please enter number.\n\n");
             continue;
         }
 
@@ -128,10 +157,9 @@ void run_user_mode(void) {
     cart_init();  // 유저 모드 들어올 때마다 장바구니 초기화
 
     while (1) {
+        // 1) 카테고리 선택
         int category = select_category();
-        if (category == -1) { // 잘못된 입력 → 다시 카테고리 선택
-            continue;
-        }
+
         if (category == 0) {
             // 메인 화면으로
             printf("\n");
@@ -144,6 +172,7 @@ void run_user_mode(void) {
             continue;
         }
 
+        // 2) 메뉴 로드 + 출력
         MenuItem items[MAX_MENU_ITEMS];
         int count = load_menu(filepath, items, MAX_MENU_ITEMS);
         if (count <= 0) {
@@ -153,10 +182,8 @@ void run_user_mode(void) {
 
         print_menu(items, count);
 
+        // 3) 메뉴 id 선택
         int id = select_menu_id();
-        if (id == -1) {
-            continue; // invalid
-        }
         if (id == 0) {
             // 카테고리로 돌아가기
             printf("\n");
@@ -176,32 +203,34 @@ void run_user_mode(void) {
             continue;
         }
 
+        // 4) 수량 선택
         int qty = select_quantity();
         if (qty <= 0) {
+            // 이 아이템만 취소하고 다시 카테고리부터
             continue;
         }
 
-                cart_add(selected, qty);
+        // 5) 장바구니 담기
+        cart_add(selected, qty);
         printf("\nAdded to cart: %s x%d\n\n", selected->name, qty);
 
-        // cart / payment loop
+        // 6) 장바구니 / 결제 루프
         while (1) {
             cart_print();
 
             int next = show_after_add_menu();
             if (next == 0) {
-                // timeout or user cancelled -> 메인으로
+                // timeout 또는 전체 취소 -> 메인으로
                 return;
             } else if (next == 1) {
-                // add more
+                // add more -> 카테고리 선택부터 다시
                 break;
             } else if (next == 2) {
                 int paid = run_payment_flow();
                 if (paid) {
-                    return;   // payment success -> 메인
+                    return;
                 } else {
                     printf("\nPayment cancelled. Back to previous screen.\n\n");
-                    // 다시 cart_print -> show_after_add_menu
                 }
             }
         }

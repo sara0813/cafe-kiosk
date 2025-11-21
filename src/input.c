@@ -1,7 +1,7 @@
 // src/input.c
 #include <stdio.h>
 #include <stdlib.h>
-
+#include <string.h>
 #include "input.h"
 
 #ifdef _WIN32
@@ -84,6 +84,13 @@ static int wait_for_input(int warn_sec, int timeout_sec) {
 
 // ---------- 공통 부분 ----------
 
+// timeout 날 때 그 사이에 들어온 입력(뒤늦게 친 숫자들) 버려주는 헬퍼
+static void discard_stdin_line(void) {
+    int ch;
+    while ((ch = getchar()) != '\n' && ch != EOF)
+        ;
+}
+
 int timed_read_int(const char *prompt, int *out,
                    int warn_sec, int timeout_sec) {
     if (prompt) {
@@ -92,6 +99,8 @@ int timed_read_int(const char *prompt, int *out,
     }
 
     if (!wait_for_input(warn_sec, timeout_sec)) {
+        // 타임아웃 동안 눌린 키들은 다음 화면에 섞이지 않도록 버림
+        discard_stdin_line();
         return INPUT_TIMEOUT;
     }
 
@@ -116,5 +125,32 @@ int timed_read_int(const char *prompt, int *out,
     }
 
     *out = (int)val;
+    return INPUT_OK;
+}
+
+/*
+ * 문자열을 타임아웃 붙여서 읽는 공통 함수
+ *  - 경고/타임아웃 메시지는 위의 wait_for_input()에서 동일하게 처리됨
+ *  - 개행 문자('\n')는 제거해서 돌려줌
+ */
+int timed_read_line(const char *prompt, char *buf, size_t size,
+                    int warn_sec, int timeout_sec) {
+    if (prompt) {
+        printf("%s", prompt);
+        fflush(stdout);
+    }
+
+    if (!wait_for_input(warn_sec, timeout_sec)) {
+        discard_stdin_line();
+        return INPUT_TIMEOUT;
+    }
+
+    if (!fgets(buf, size, stdin)) {
+        return INPUT_TIMEOUT;
+    }
+
+    char *nl = strchr(buf, '\n');
+    if (nl) *nl = '\0';
+
     return INPUT_OK;
 }

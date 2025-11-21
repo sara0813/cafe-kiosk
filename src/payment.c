@@ -1,5 +1,6 @@
 // src/payment.c
 #include <stdio.h>
+#include <string.h>
 #include "cart.h"
 #include "payment.h"
 #include "order_log.h" 
@@ -67,17 +68,33 @@ static int ask_point(void) {
 }
 
 
-// 전화번호 입력 (숫자만 11자리)
+// 전화번호 입력 (숫자만 11자리, 타임아웃 포함)
 static void save_point(void) {
     char phone[32];
 
     while (1) {
-        printf("Enter your phone number (11 digits): ");
+        int result = timed_read_line(
+            "Enter your phone number (11 digits): ",
+            phone, sizeof(phone),
+            INPUT_WARN_SEC, INPUT_TIMEOUT_SEC
+        );
+
+        if (result == INPUT_TIMEOUT) {
+            printf("\nTimeout. Skip point saving.\n\n");
+            return;   // 포인트 적립 자체를 건너뜀
+        }
+
+        // timed_read_line은 지금 INPUT_OK 또는 TIMEOUT만 쓰지만,
+        // 혹시 나중을 위해 다른 값이 오면 다시 입력 받도록 처리
+        if (result != INPUT_OK) {
+            printf("Invalid input.\n\n");
+            continue;
+        }
 
         int len = 0;
         int ok = 1;
         for (const char *p = phone; *p; ++p) {
-            if (*p < '0' || *p > '9') { // 숫자만
+            if (*p < '0' || *p > '9') { // 숫자가 아니면 실패
                 ok = 0;
                 break;
             }
@@ -86,14 +103,16 @@ static void save_point(void) {
 
         if (!ok || len != 11) {
             printf("Phone number must be 11 digits of numbers only.\n\n");
-            continue;
+            continue;   // 다시 입력 받기
         }
 
-        break; // 유효한 번호
+        // 여기까지 왔으면 유효한 번호
+        break;
     }
 
     printf("Points saved for %s.\n\n", phone);
 }
+
 
 // 영수증 / 대기번호
 static int next_order_no = 1;

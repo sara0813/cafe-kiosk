@@ -2,17 +2,23 @@
 #ifndef INPUT_H
 #define INPUT_H
 
-#define INPUT_OK       1   // normal input
-#define INPUT_TIMEOUT  0   // timeout
-#define INPUT_INVALID -1   // not a valid integer
+#include <stddef.h>
 
-// default seconds (for all screens)
-#define INPUT_WARN_SEC    5   // show warning after 5s
-#define INPUT_TIMEOUT_SEC 8   // auto cancel after 8s
+// 입력 결과 코드
+#define INPUT_OK       0
+#define INPUT_INVALID  1
+#define INPUT_TIMEOUT  2
 
-// warn_sec 초 동안 입력 없으면 경고,
-// timeout_sec 초까지 입력 없으면 TIMEOUT 리턴
+// 경고 / 타임아웃 기본 시간(초)
+#define INPUT_WARN_SEC     5   // 5초 동안 아무 입력 없으면 경고
+#define INPUT_TIMEOUT_SEC  8   // 총 8초 지나면 화면 취소
+
+// 정수 입력
 int timed_read_int(const char *prompt, int *out,
                    int warn_sec, int timeout_sec);
+
+// 한 줄 문자열 입력
+int timed_read_line(const char *prompt, char *buf, size_t size,
+                    int warn_sec, int timeout_sec);
 
 #endif

@@ -14,18 +14,39 @@ int admin_login(void) {
 
     while (attempts < 3) {
         printf("\n=== Admin Login ===\n");
-
         printf("ID: ");
-        if (scanf("%31s", id) != 1) {
+        fflush(stdout);
+
+        int ch;
+        while (1) {
+            ch = getchar();
+            if (ch == EOF) {
+                break;
+            }
+            if (ch == '\n') {
+                // 이전 입력에서 남아있는 개행은 그냥 버림
+                continue;
+            }
+            // 첫 번째 실제 문자면 다시 넣어두고 fgets가 읽게 함
+            ungetc(ch, stdin);
+            break;
+        }
+
+        if (!fgets(id, sizeof(id), stdin)) {
             printf("Invalid input.\n\n");
             continue;
         }
+        char *nl = strchr(id, '\n');
+        if (nl) *nl = '\0';
 
         printf("Password: ");
-        if (scanf("%31s", pw) != 1) {
+        fflush(stdout);
+        if (!fgets(pw, sizeof(pw), stdin)) {
             printf("Invalid input.\n\n");
             continue;
         }
+        nl = strchr(pw, '\n');
+        if (nl) *nl = '\0';
 
         if (strcmp(id, ADMIN_ID) == 0 && strcmp(pw, ADMIN_PW) == 0) {
             printf("Login success.\n\n");
