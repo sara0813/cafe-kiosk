@@ -25,9 +25,14 @@ static const char *get_place_name(int order_place) {
     }
 }
 
-// 주문 로그 기록
-// 성공: 1, 실패: 0
-int write_order_log(int order_no, int total, int method, int order_place) {
+
+int write_order_log(int order_no,
+                    const char *menu_name,
+                    int qty,
+                    int line_total,
+                    int method,
+                    int order_place)
+{
     FILE *fp = fopen(ORDERS_LOG_PATH, "a");
     if (!fp) {
         // 파일 열기 실패
@@ -49,11 +54,9 @@ int write_order_log(int order_no, int total, int method, int order_place) {
         snprintf(tbuf, sizeof(tbuf), "unknown-time");
     }
 
-    // 예:
-    // time=2025-11-21 13:40:01, order=3, total=6000, method=CARD, place=HERE
     fprintf(fp,
-        "time=%s, order=%d, total=%d, method=%s, place=%s\n",
-        tbuf, order_no, total, method_str, place_str);
+        "time=%s, order=%d, menu=%s, qty=%d, total=%d, method=%s, place=%s\n",
+        tbuf, order_no, menu_name, qty, line_total, method_str, place_str);
 
     fclose(fp);
     return 1;

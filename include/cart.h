@@ -17,4 +17,7 @@ int  cart_is_empty(void);
 int  cart_total_price(void);
 void cart_print(void);
 
+int  cart_get_count(void);
+const CartItem *cart_get_item(int index);
+
 #endif

@@ -6,8 +6,6 @@
 #include "menu.h"
 #include "price.h"
 
-#define MAX_MENU_ITEMS 256
-
 // 실제 메뉴 파일 경로들
 #define MENU_FILE_COFFEE        "data/menus/coffee.txt"
 #define MENU_FILE_NONCOFFEE     "data/menus/noncoffee.txt"

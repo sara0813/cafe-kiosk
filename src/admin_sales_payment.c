@@ -1,6 +1,7 @@
 // src/admin_sales_payment.c
 #include <stdio.h>
 #include <string.h>
+#include "price.h"
 
 #define ORDERS_LOG_PATH "data/logs/orders.log"
 
@@ -65,9 +66,15 @@ void show_sales_by_payment(void) {
     }
     fclose(fp);
 
+    char total_buf[32], cash_buf[32], card_buf[32], kakao_buf[32];
+    format_price_with_comma((int)total_sum, total_buf, sizeof(total_buf));
+    format_price_with_comma((int)sum_cash,  cash_buf,  sizeof(cash_buf));
+    format_price_with_comma((int)sum_card,  card_buf,  sizeof(card_buf));
+    format_price_with_comma((int)sum_kakao, kakao_buf, sizeof(kakao_buf));
+
     printf("\n=== Sales by Payment Method ===\n");
-    printf("Total orders : %d, Total sales : %lld won\n\n", total_cnt, total_sum);
-    printf("  [Cash]     %4d orders, %10lld won\n", cnt_cash,  sum_cash);
-    printf("  [Card]     %4d orders, %10lld won\n", cnt_card,  sum_card);
-    printf("  [KakaoPay] %4d orders, %10lld won\n\n", cnt_kakao, sum_kakao);
+    printf("Total orders : %d, Total sales : %s won\n\n", total_cnt, total_buf);
+    printf("  [Cash]     %4d orders, %10s won\n", cnt_cash,  cash_buf);
+    printf("  [Card]     %4d orders, %10s won\n", cnt_card,  card_buf);
+    printf("  [KakaoPay] %4d orders, %10s won\n\n", cnt_kakao, kakao_buf);
 }

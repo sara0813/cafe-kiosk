@@ -1,6 +1,7 @@
 // src/admin_sales_place.c
 #include <stdio.h>
 #include <string.h>
+#include "price.h"   // ★ 가격 포맷용
 
 #define ORDERS_LOG_PATH "data/logs/orders.log"
 
@@ -65,6 +66,11 @@ void show_place_stats(void) {
         return;
     }
 
-    printf("  [Dine-in]  %4d orders, %10lld won\n", cnt_here,    sum_here);
-    printf("  [Takeout]  %4d orders, %10lld won\n\n", cnt_takeout, sum_takeout);
+    char here_buf[32], takeout_buf[32];
+    // long long → int 캐스팅 (금액이 int 범위 안이라고 가정)
+    format_price_with_comma((int)sum_here,    here_buf,    sizeof(here_buf));
+    format_price_with_comma((int)sum_takeout, takeout_buf, sizeof(takeout_buf));
+
+    printf("  [Dine-in]  %4d orders, %10s won\n", cnt_here,    here_buf);
+    printf("  [Takeout]  %4d orders, %10s won\n\n", cnt_takeout, takeout_buf);
 }

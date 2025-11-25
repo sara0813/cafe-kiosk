@@ -70,3 +70,12 @@ void cart_print(void) {
     printf("Total: %s won\n", total_str);
     printf("==============\n\n");
 }
+
+int cart_get_count(void) {
+    return cart_count;
+}
+
+const CartItem *cart_get_item(int index) {
+    if (index < 0 || index >= cart_count) return NULL;
+    return &cart[index];
+}

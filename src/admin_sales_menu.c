@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include "price.h"   // ★ 가격에 콤마 찍기
 
 #define ORDERS_LOG_PATH "data/logs/orders.log"
 #define MAX_MENU_STATS  256
@@ -100,11 +101,15 @@ void show_sales_by_menu(void) {
         return;
     }
 
-    printf("%-30s %8s %12s\n", "Menu name", "Quantity", "Sales");
+    printf("%-30s %8s %15s\n", "Menu name", "Quantity", "Sales");
     printf("--------------------------------------------------------------\n");
     for (int i = 0; i < count; i++) {
-        printf("%-30s %8d %12lld\n",
-               stats[i].name, stats[i].qty, stats[i].sales);
+        char buf[32];
+        // long long → int 캐스팅 (가격 범위는 int 안이라고 가정)
+        format_price_with_comma((int)stats[i].sales, buf, sizeof(buf));
+
+        printf("%-30s %8d %15s won\n",
+               stats[i].name, stats[i].qty, buf);
     }
     printf("\n");
 }
@@ -140,11 +145,14 @@ void show_top5_menus(void) {
     qsort(stats, count, sizeof(MenuStat), cmp_menu_qty_desc);
 
     int top = (count < 5) ? count : 5;
-    printf("%-4s %-30s %8s %12s\n", "Rank", "Menu name", "Quantity", "Sales");
+    printf("%-4s %-30s %8s %15s\n", "Rank", "Menu name", "Quantity", "Sales");
     printf("--------------------------------------------------------------\n");
     for (int i = 0; i < top; i++) {
-        printf("%2d   %-30s %8d %12lld\n",
-               i + 1, stats[i].name, stats[i].qty, stats[i].sales);
+        char buf[32];
+        format_price_with_comma((int)stats[i].sales, buf, sizeof(buf));
+
+        printf("%2d   %-30s %8d %15s won\n",
+               i + 1, stats[i].name, stats[i].qty, buf);
     }
     printf("\n");
 }

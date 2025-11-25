@@ -157,6 +157,27 @@ static void ask_receipt_and_print(int order_no) {
     }
 }
 
+// 장바구니 내용을 주문 로그에 기록
+static void log_order_items(int order_no, int method, int order_place) {
+    int count = cart_get_count();
+
+    for (int i = 0; i < count; i++) {
+        const CartItem *ci = cart_get_item(i);
+        if (!ci) continue;
+
+        int line_total = ci->item.price * ci->quantity;
+
+        // 로그 한 줄:
+        // time=..., order=3, menu=Americano, qty=2, total=6600, method=CARD, place=HERE
+        write_order_log(order_no,
+                        ci->item.name,
+                        ci->quantity,
+                        line_total,
+                        method,
+                        order_place);
+    }
+}
+
 
 // 결제 전체 플로우
 // order_place: 1 = 매장, 2 = 포장
@@ -209,8 +230,8 @@ int run_payment_flow(int order_place) {
 
     int order_no = next_order_no++;
 
-    // order_place: 1 = HERE, 2 = TOGO (상세한 문자열 변환은 order_log.c에서 처리)
-    write_order_log(order_no, total, method, order_place);
+    // 2-1) 주문 로그 기록 (장바구니 항목별 한 줄씩)
+    log_order_items(order_no, method, order_place);
 
     // 3) 포인트 적립 (결제 후)
     if (ask_point()) {
