@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include "user.h"
 #include "admin.h"
+#include "input.h"
 
 int main(void) {
     int choice;
@@ -14,14 +15,17 @@ int main(void) {
         printf("2. Admin mode\n");
         printf("0. Exit\n");
         printf("---------------------------------\n");
-        printf("Select: ");
 
-        if (scanf("%d", &choice) != 1) {
-            // flush invalid input
-            int ch;
-            while ((ch = getchar()) != '\n' && ch != EOF)
-                ;
+        int result = timed_read_int("Select: ", &choice,
+                                    0, 0);   // ★ 타임아웃 없이 블로킹
+
+        if (result == INPUT_INVALID) {
             printf("Invalid input. Please enter a number.\n\n");
+            continue;
+        }
+        if (result == INPUT_TIMEOUT) {
+            // theoretically 거의 안 나옴 (EOF 등)
+            printf("Input error.\n\n");
             continue;
         }
 

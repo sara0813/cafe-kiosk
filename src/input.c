@@ -9,21 +9,22 @@
 #include <conio.h>
 #include <windows.h>
 
-// 키보드 입력이 준비될 때까지 대기
-static int wait_for_input(int warn_sec, int timeout_sec) {
+// 타임아웃이 있는 경우에만 사용하는, 입력 대기 함수
+static int wait_for_input_with_timeout(int warn_sec, int timeout_sec) {
     fflush(stdout);
+
     int elapsed = 0;
     int warned = 0;
 
     while (elapsed < timeout_sec) {
         if (_kbhit()) {
-            return 1;
+            return 1;   // 입력 준비됨
         }
 
         Sleep(1000);
         elapsed++;
 
-        if (!warned && elapsed >= warn_sec) {
+        if (!warned && warn_sec > 0 && elapsed >= warn_sec) {
             int remaining = timeout_sec - elapsed;
             if (remaining < 0) remaining = 0;
 
@@ -44,20 +45,20 @@ static int wait_for_input(int warn_sec, int timeout_sec) {
 #include <sys/select.h>
 #include <unistd.h>
 
-static int wait_for_input(int warn_sec, int timeout_sec) {
+static int wait_for_input_with_timeout(int warn_sec, int timeout_sec) {
     int elapsed = 0;
-    int warned = 0;
+    int warned  = 0;
 
     while (elapsed < timeout_sec) {
         fd_set rfds;
         FD_ZERO(&rfds);
-        FD_SET(0, &rfds);   // stdin (fd 0)
+        FD_SET(STDIN_FILENO, &rfds);   // stdin (fd 0)
 
         struct timeval tv;
-        tv.tv_sec = 1;
+        tv.tv_sec  = 1;
         tv.tv_usec = 0;
 
-        int ret = select(1, &rfds, NULL, NULL, &tv);
+        int ret = select(STDIN_FILENO + 1, &rfds, NULL, NULL, &tv);
         if (ret > 0) {
             return 1;       // 입력 준비됨
         } else if (ret < 0) {
@@ -66,7 +67,7 @@ static int wait_for_input(int warn_sec, int timeout_sec) {
 
         elapsed++;
 
-        if (!warned && elapsed >= warn_sec) {
+        if (!warned && warn_sec > 0 && elapsed >= warn_sec) {
             int remaining = timeout_sec - elapsed;
             if (remaining < 0) remaining = 0;
 
@@ -83,33 +84,45 @@ static int wait_for_input(int warn_sec, int timeout_sec) {
 }
 #endif
 
-// ---------- 공통 부분 ----------
-
-// timeout 날 때 그 사이에 들어온 입력(뒤늦게 친 숫자들) 버려주는 헬퍼
-static void discard_stdin_line(void) {
-    int ch;
-    while ((ch = getchar()) != '\n' && ch != EOF)
-        ;
-}
+// ---------- 공통: 정수 입력 ----------
 
 int timed_read_int(const char *prompt, int *out,
-                   int warn_sec, int timeout_sec) {
+                   int warn_sec, int timeout_sec)
+{
+    char buf[64];
+
+    // 1) 프롬프트 출력
     if (prompt) {
         printf("%s", prompt);
         fflush(stdout);
     }
 
-    if (!wait_for_input(warn_sec, timeout_sec)) {
-        // 타임아웃 동안 눌린 키들은 다음 화면에 섞이지 않도록 버림
-        discard_stdin_line();
-        return INPUT_TIMEOUT;
+    // 2) 타임아웃이 없는 경우: 그냥 블로킹 fgets 사용
+    if (timeout_sec <= 0) {
+        if (!fgets(buf, sizeof(buf), stdin)) {
+            return INPUT_TIMEOUT;
+        }
+    } else {
+        // 3) 타임아웃이 있는 경우: 먼저 입력 준비를 기다림
+        if (!wait_for_input_with_timeout(warn_sec, timeout_sec)) {
+            // 시간 내에 아무 입력도 안 옴
+            return INPUT_TIMEOUT;
+        }
+        if (!fgets(buf, sizeof(buf), stdin)) {
+            return INPUT_TIMEOUT;
+        }
     }
 
-    char buf[64];
-    if (!fgets(buf, sizeof(buf), stdin)) {
-        return INPUT_TIMEOUT;
+    // 4) 공백/개행만 들어왔는지 체크
+    char *p = buf;
+    while (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n') {
+        p++;
+    }
+    if (*p == '\0') {
+        return INPUT_INVALID;
     }
 
+    // 5) 정수 파싱
     char *endptr;
     long val = strtol(buf, &endptr, 10);
 
@@ -117,32 +130,40 @@ int timed_read_int(const char *prompt, int *out,
         return INPUT_INVALID;   // 숫자 하나도 못 읽음
     }
 
+    // 6) 뒤에 공백/개행 외의 문자가 있으면 invalid
     while (*endptr == ' ' || *endptr == '\t' ||
            *endptr == '\r' || *endptr == '\n') {
         endptr++;
     }
     if (*endptr != '\0') {
-        return INPUT_INVALID;   // 뒤에 이상한 문자 더 있음
+        return INPUT_INVALID;
     }
 
     *out = (int)val;
     return INPUT_OK;
 }
 
+// ---------- 공통: 문자열 입력 ----------
+
 int timed_read_line(const char *prompt, char *buf, size_t size,
-                    int warn_sec, int timeout_sec) {
+                    int warn_sec, int timeout_sec)
+{
     if (prompt) {
         printf("%s", prompt);
         fflush(stdout);
     }
 
-    if (!wait_for_input(warn_sec, timeout_sec)) {
-        discard_stdin_line();
-        return INPUT_TIMEOUT;
-    }
-
-    if (!fgets(buf, size, stdin)) {
-        return INPUT_TIMEOUT;
+    if (timeout_sec <= 0) {
+        if (!fgets(buf, size, stdin)) {
+            return INPUT_TIMEOUT;
+        }
+    } else {
+        if (!wait_for_input_with_timeout(warn_sec, timeout_sec)) {
+            return INPUT_TIMEOUT;
+        }
+        if (!fgets(buf, size, stdin)) {
+            return INPUT_TIMEOUT;
+        }
     }
 
     char *nl = strchr(buf, '\n');

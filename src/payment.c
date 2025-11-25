@@ -7,7 +7,7 @@
 #include "input.h"
 
 // 결제 수단 선택
-// return: 1=Cash, 2=Card, 3=KakaoPay, 0=Cancel
+// return: 1=Cash, 2=Card, 3=KakaoPay, 0=Cancel, -1=Timeout
 static int select_payment_method(void) {
     int method;
 
@@ -22,8 +22,9 @@ static int select_payment_method(void) {
                                     INPUT_WARN_SEC, INPUT_TIMEOUT_SEC);
 
         if (result == INPUT_TIMEOUT) {
-            printf("\nTimeout. Payment cancelled.\n\n");
-            return 0;  // 0 = cancel
+            // ★ 유저 모드 전체를 메인으로 돌려보낼 타임아웃
+            printf("\nTimeout. Back to main menu.\n\n");
+            return -1;  // timeout
         }
         if (result == INPUT_INVALID) {
             printf("Invalid input.\n\n");
@@ -50,6 +51,7 @@ static int ask_point(void) {
                                     INPUT_WARN_SEC, INPUT_TIMEOUT_SEC);
 
         if (result == INPUT_TIMEOUT) {
+            // 포인트만 스킵하고 주문/결제 흐름은 계속 진행
             printf("\nTimeout. Skip point saving.\n\n");
             return 0;  // 그냥 적립 안 하고 진행
         }
@@ -129,6 +131,7 @@ static void ask_receipt_and_print(int order_no) {
                                     INPUT_WARN_SEC, INPUT_TIMEOUT_SEC);
 
         if (result == INPUT_TIMEOUT) {
+            // 영수증만 스킵, 주문은 그대로 완료
             printf("\nTimeout. No receipt.\n");
             choice = 2;   // 영수증 없이 진행
             break;
@@ -157,7 +160,7 @@ static void ask_receipt_and_print(int order_no) {
 
 // 결제 전체 플로우
 // order_place: 1 = 매장, 2 = 포장
-// 결제 완료: 1, 취소: 0
+// return: 1 = 결제 완료(또는 타임아웃으로 메인으로 복귀), 0 = 결제 취소(이전 화면으로)
 int run_payment_flow(int order_place) {
     if (cart_is_empty()) {
         printf("Cart is empty. Nothing to pay.\n\n");
@@ -171,9 +174,15 @@ int run_payment_flow(int order_place) {
 
     // 1) 결제 수단 선택
     int method = select_payment_method();
+    if (method < 0) {
+        // ★ 타임아웃: 주문 전체 취소 후 메인으로 나갈 것
+        printf("Payment timeout. Order cancelled and back to main menu.\n\n");
+        cart_init();   // 주문 비우기
+        return 1;      // run_user_mode에서 if (paid) return; → 메인으로
+    }
     if (method == 0) {
         printf("Payment cancelled.\n\n");
-        return 0;   // 이전 화면으로
+        return 0;   // 이전 화면(장바구니)으로
     }
 
     // 2) 실제 결제 처리
