@@ -21,13 +21,8 @@ void run_admin_mode(void) {
         printf("4. Order / refund management\n");
         printf("0. Back to main menu\n");
 
-        result = timed_read_int("Select: ", &choice,
-                                INPUT_WARN_SEC, INPUT_TIMEOUT_SEC);
+        result = timed_read_int("Select: ", &choice, 0, 0);
 
-        if (result == INPUT_TIMEOUT) {
-            printf("\nTimeout. Back to main menu.\n\n");
-            return;
-        }
         if (result == INPUT_INVALID) {
             printf("Invalid input.\n\n");
             continue;

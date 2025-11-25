@@ -21,6 +21,11 @@ SRCS = \
     src/admin_login.c \
     src/admin_main.c \
     src/admin_sales.c \
+    src/admin_sales_total.c \
+    src/admin_sales_payment.c \
+    src/admin_sales_menu.c \
+    src/admin_sales_place.c \
+    src/admin_sales_log.c \
     src/admin_menu_edit.c \
     src/admin_stock.c \
     src/admin_refund.c
