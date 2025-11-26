@@ -1,10 +1,10 @@
-1,    Espresso,4500
-2,    Americano,4800
-3,    Caffe Latte,5300
-4,    Cappuccino,5300
-5,    Caffe Mocha,5800
-6,    Vanilla Latte,5800
-7,    Caramel Macchiato,5800
-8,    Affogato,6500
-9,    Iced Coconut Coffee,7300
-10,    Iced Pitcher Americano,8000
+1,     Espresso,4500
+2,     Americano,4800
+3,     Caffe Latte,5300
+4,     Cappuccino,5300
+5,     Caffe Mocha,5800
+6,     Vanilla Latte,5800
+7,     Caramel Macchiato,5800
+8,     Affogato,6500
+9,     Iced Coconut Coffee,7300
+10,     Iced Pitcher Americano,8000

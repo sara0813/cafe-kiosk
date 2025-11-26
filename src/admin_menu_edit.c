@@ -119,14 +119,6 @@ static void show_category_menu(const char *filepath, const char *cat_name) {
     printf("\n");
 }
 
-// 입력 버퍼에 남아 있을 수 있는 개행 제거용
-static void clear_stdin_line(void) {
-    int c;
-    while ((c = getchar()) != '\n' && c != EOF) {
-        // discard
-    }
-}
-
 // -------- edit operations for one category --------
 
 // 가격 수정
@@ -210,9 +202,6 @@ static void add_item_to_category(const char *filepath, const char *cat_name) {
     }
 
     printf("\n=== Add New Menu Item (%s) ===\n", cat_name);
-
-    // 숫자 입력 후 남은 '\n' 제거
-    clear_stdin_line();
 
     char name[64];
     printf("Enter menu name: ");
