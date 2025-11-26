@@ -28,7 +28,8 @@ SRCS = \
     src/admin_sales_log.c \
     src/admin_menu_edit.c \
     src/admin_stock.c \
-    src/admin_refund.c
+    src/admin_refund.c \
+    src/stock.c
 
 OBJS   = $(SRCS:.c=.o)
 
