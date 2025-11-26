@@ -1,202 +1,334 @@
 // src/admin_refund.c
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "input.h"
 
-#define ORDERS_LOG_PATH  "data/logs/orders.log"
-#define REFUND_LOG_PATH  "data/logs/refunds.log"
+// 로그 파일 경로 (admin_sales.c, order_log.c 에서 쓰던 것과 동일)
+#define ORDERS_LOG_PATH   "data/logs/orders.log"
+#define REFUNDS_LOG_PATH  "data/logs/refunds.log"
 
-// -------------------- 헬퍼: 주문 로그 전체 보기 --------------------
-static void show_order_log(void) {
-    FILE *fp = fopen(ORDERS_LOG_PATH, "r");
-    if (!fp) {
-        printf("Cannot open %s\n\n", ORDERS_LOG_PATH);
-        return;
+typedef struct {
+    int  order_no;
+    char time_str[32];
+    char menu[64];
+    int  qty;
+    int  total;
+    char method[16];
+    char place[16];
+} OrderLogEntry;
+
+// --------- internal helpers ---------
+
+// 한 줄의 주문 로그를 OrderLogEntry로 파싱
+static int parse_order_log_line(const char *line, OrderLogEntry *out)
+{
+    char *p_time, *p_order, *p_menu, *p_qty, *p_total, *p_method, *p_place;
+
+    if (!line || !out) return 0;
+
+    memset(out, 0, sizeof(*out));
+
+    p_time   = strstr(line, "time=");
+    p_order  = strstr(line, "order=");
+    p_menu   = strstr(line, "menu=");
+    p_qty    = strstr(line, "qty=");
+    p_total  = strstr(line, "total=");
+    p_method = strstr(line, "method=");
+    p_place  = strstr(line, "place=");
+
+    if (!p_order || !p_menu || !p_qty || !p_total)
+        return 0;
+
+    if (p_time) {
+        p_time += 5; // skip "time="
+        const char *comma = strchr(p_time, ',');
+        int len = comma ? (int)(comma - p_time) : (int)strlen(p_time);
+        if (len > (int)sizeof(out->time_str) - 1)
+            len = (int)sizeof(out->time_str) - 1;
+        strncpy(out->time_str, p_time, len);
+        out->time_str[len] = '\0';
+    } else {
+        out->time_str[0] = '\0';
     }
 
-    printf("\n===== Order Log =====\n");
+    if (sscanf(p_order, "order=%d", &out->order_no) != 1)
+        return 0;
+    if (sscanf(p_menu,  "menu=%63[^,]", out->menu) != 1)
+        return 0;
+    if (sscanf(p_qty,   "qty=%d", &out->qty) != 1)
+        return 0;
+    if (sscanf(p_total, "total=%d", &out->total) != 1)
+        return 0;
 
-    char line[256];
-    int line_no = 0;
-    while (fgets(line, sizeof(line), fp)) {
-        line_no++;
-        printf("%3d) %s", line_no, line);   // 줄 번호 붙여서 보여줌
-        if (line[strlen(line) - 1] != '\n')
-            printf("\n");
+    if (p_method) {
+        sscanf(p_method, "method=%15[^,]", out->method);
+    } else {
+        out->method[0] = '\0';
     }
 
-    if (line_no == 0) {
-        printf("(No orders yet)\n");
+    if (p_place) {
+        sscanf(p_place, "place=%15[^,\n]", out->place);
+    } else {
+        out->place[0] = '\0';
     }
 
-    printf("=====================\n\n");
-    fclose(fp);
+    return 1;
 }
 
-// -------------------- 헬퍼: 특정 주문 찾기 --------------------
-// 찾으면 1 리턴, 못 찾으면 0 리턴
-static int find_order(int target_no,
-                      int *out_total,
-                      char *out_method, size_t method_size)
+// refunds.log 에서 이미 환불된 주문인지 체크
+static int is_already_refunded(int order_no)
 {
-    FILE *fp = fopen(ORDERS_LOG_PATH, "r");
+    FILE *fp;
+    char line[512];
+
+    fp = fopen(REFUNDS_LOG_PATH, "r");
+    if (!fp) {
+        // 파일이 없으면 아직 환불 내역이 없는 것
+        return 0;
+    }
+
+    while (fgets(line, sizeof(line), fp)) {
+        OrderLogEntry e;
+        if (!parse_order_log_line(line, &e))
+            continue;
+        if (e.order_no == order_no) {
+            fclose(fp);
+            return 1;
+        }
+    }
+
+    fclose(fp);
+    return 0;
+}
+
+// 특정 주문번호(order_no)의 모든 로그를 화면에 출력
+static int show_order_by_number(int order_no)
+{
+    FILE *fp;
+    char line[512];
+    int found = 0;
+
+    fp = fopen(ORDERS_LOG_PATH, "r");
     if (!fp) {
         printf("Cannot open %s\n\n", ORDERS_LOG_PATH);
         return 0;
     }
 
-    char line[256];
-    int found = 0;
+    printf("=== Order #%d ===\n", order_no);
 
     while (fgets(line, sizeof(line), fp)) {
-        int order_no = 0;
-        int total = 0;
-        char method[32] = {0};
-
-        char *p_order  = strstr(line, "order=");
-        char *p_total  = strstr(line, "total=");
-        char *p_method = strstr(line, "method=");
-
-        if (!p_order || !p_total || !p_method)
+        OrderLogEntry e;
+        if (!parse_order_log_line(line, &e))
+            continue;
+        if (e.order_no != order_no)
             continue;
 
-        if (sscanf(p_order,  "order=%d", &order_no) != 1)
-            continue;
-        if (sscanf(p_total,  "total=%d", &total) != 1)
-            continue;
-        if (sscanf(p_method, "method=%31[^,\n]", method) != 1)
-            continue;
-
-        if (order_no == target_no) {
-            if (out_total) *out_total = total;
-            if (out_method && method_size > 0)
-                strncpy(out_method, method, method_size - 1);
-            found = 1;
-            break;
-        }
+        found = 1;
+        printf(" [%s] %s x%d  | line total: %d  | %s / %s\n",
+               e.time_str[0] ? e.time_str : "no time",
+               e.menu,
+               e.qty,
+               e.total,
+               e.method[0] ? e.method : "-",
+               e.place[0] ? e.place : "-");
     }
 
+    if (!found) {
+        printf("No logs found for order #%d.\n", order_no);
+    }
+
+    printf("\n");
     fclose(fp);
     return found;
 }
 
-// -------------------- 헬퍼: 환불 로그에 기록 --------------------
-static void write_refund_log(int order_no, int total, const char *method) {
-    FILE *fp = fopen(REFUND_LOG_PATH, "a");
+// 전체 주문 로그 간단 출력
+static void show_all_orders(void)
+{
+    FILE *fp;
+    char line[512];
+
+    fp = fopen(ORDERS_LOG_PATH, "r");
     if (!fp) {
-        printf("Cannot open %s for write.\n\n", REFUND_LOG_PATH);
+        printf("Cannot open %s\n\n", ORDERS_LOG_PATH);
         return;
     }
 
-    fprintf(fp, "order=%d, total=%d, method=%s, status=REFUND\n",
-            order_no, total, method ? method : "UNKNOWN");
+    printf("=== All Orders (from %s) ===\n", ORDERS_LOG_PATH);
+
+    while (fgets(line, sizeof(line), fp)) {
+        OrderLogEntry e;
+        if (!parse_order_log_line(line, &e))
+            continue;
+
+        printf("#%d | %s | %s x%d | total %d | %s / %s\n",
+               e.order_no,
+               e.time_str[0] ? e.time_str : "no time",
+               e.menu,
+               e.qty,
+               e.total,
+               e.method[0] ? e.method : "-",
+               e.place[0] ? e.place : "-");
+    }
+
+    printf("\n");
     fclose(fp);
 }
 
-// -------------------- 환불 처리 --------------------
-static void do_refund(void) {
+// 환불 로그에 order_no에 해당하는 줄들을 그대로 복사(append)
+static int write_refund_log_for_order(int order_no)
+{
+    FILE *fp_in, *fp_out;
+    char line[512];
+    int found = 0;
+
+    fp_in = fopen(ORDERS_LOG_PATH, "r");
+    if (!fp_in) {
+        printf("Cannot open %s\n\n", ORDERS_LOG_PATH);
+        return 0;
+    }
+
+    fp_out = fopen(REFUNDS_LOG_PATH, "a");
+    if (!fp_out) {
+        printf("Cannot open %s for append.\n\n", REFUNDS_LOG_PATH);
+        fclose(fp_in);
+        return 0;
+    }
+
+    while (fgets(line, sizeof(line), fp_in)) {
+        OrderLogEntry e;
+        if (!parse_order_log_line(line, &e))
+            continue;
+        if (e.order_no != order_no)
+            continue;
+
+        found = 1;
+
+        // 간단하게 맨 앞에 "REFUND " 라는 태그를 붙여서 기록
+        // 예) "REFUND time=..., order=3, ..."
+        fprintf(fp_out, "REFUND %s", line);
+    }
+
+    fclose(fp_in);
+    fclose(fp_out);
+
+    if (!found) {
+        printf("No order lines to refund for order #%d.\n\n", order_no);
+        return 0;
+    }
+
+    return 1;
+}
+
+// 실제 환불 처리 플로우
+static void do_refund_flow(void)
+{
     int order_no;
     int result;
 
-    while (1) {
-        result = timed_read_int(
-            "\nEnter order number to refund (0: cancel): ",
-            &order_no, INPUT_WARN_SEC, INPUT_TIMEOUT_SEC);
+    printf("\n--- Refund Order ---\n");
 
-        if (result == INPUT_TIMEOUT) {
-            printf("\nTimeout. Cancel refund.\n\n");
-            return;
-        }
-        if (result == INPUT_INVALID) {
-            printf("Invalid input. Please enter number.\n");
-            continue;
-        }
-        if (order_no == 0) {
-            printf("Cancel refund.\n\n");
-            return;
-        }
-        if (order_no < 0) {
-            printf("Order number must be positive.\n");
-            continue;
-        }
+    // 관리자 모드: 타임아웃 없이 입력 대기
+    result = timed_read_int("Enter order number (0 = cancel): ",
+                            &order_no,
+                            0,  // no warn
+                            0); // no timeout
 
-        break;
+    if (result == INPUT_INVALID) {
+        printf("Invalid input.\n\n");
+        return;
     }
-
-    int total = 0;
-    char method[32] = {0};
-    if (!find_order(order_no, &total, method, sizeof(method))) {
-        printf("Order #%d not found in log.\n\n", order_no);
+    if (order_no == 0) {
+        printf("Cancel refund.\n\n");
         return;
     }
 
-    printf("\n--- Order Info ---\n");
-    printf("Order no : %d\n", order_no);
-    printf("Total    : %d\n", total);
-    printf("Method   : %s\n", method);
-    printf("-------------------\n");
-
-    int confirm;
-    result = timed_read_int(
-        "Refund this order? (1: Yes, 0: No): ",
-        &confirm, INPUT_WARN_SEC, INPUT_TIMEOUT_SEC);
-
-    if (result == INPUT_TIMEOUT) {
-        printf("\nTimeout. Cancel refund.\n\n");
+    // 주문 내역이 있는지 먼저 보여줌
+    if (!show_order_by_number(order_no)) {
+        // 없는 주문번호
         return;
     }
-    if (result == INPUT_INVALID || (confirm != 0 && confirm != 1)) {
-        printf("Invalid input. Refund cancelled.\n\n");
+
+    // 이미 환불된 주문인지 확인
+    if (is_already_refunded(order_no)) {
+        printf("Order #%d has already been refunded.\n\n", order_no);
         return;
     }
-    if (confirm == 0) {
+
+    // 정말 환불할지 물어보기
+    char buf[16];
+    printf("Do you really want to refund this order? (y/n): ");
+    if (!fgets(buf, sizeof(buf), stdin)) {
+        printf("Input error. Cancel refund.\n\n");
+        return;
+    }
+
+    if (buf[0] != 'y' && buf[0] != 'Y') {
         printf("Refund cancelled.\n\n");
         return;
     }
 
-    // 실제 환불 처리 로직은 여기서:
-    //  - 나중에 매출 합계에서 빼줄 때 REFUND 로그를 참고
-    write_refund_log(order_no, total, method);
+    if (!write_refund_log_for_order(order_no)) {
+        printf("Failed to write refund log.\n\n");
+        return;
+    }
 
-    printf("\nRefund completed for order #%d.\n\n", order_no);
+    printf("Order #%d refunded. (recorded in %s)\n\n",
+           order_no, REFUNDS_LOG_PATH);
 }
 
-// -------------------- 외부에서 부르는 함수 --------------------
-void run_refund_menu(void) {
+// --------- public entry point ---------
+
+void run_refund_menu(void)
+{
     int choice;
     int result;
 
     while (1) {
-        printf("=== Order Management ===\n");
-        printf("1. View order log\n");
-        printf("2. Refund order\n");
-        printf("0. Back to admin menu\n");
-        printf("------------------------\n");
+        printf("=== Order / Refund Management ===\n");
+        printf("1. Show all order logs\n");
+        printf("2. Search order by order number\n");
+        printf("3. Refund an order\n");
+        printf("0. Back\n");
+        printf("-------------------------------\n");
 
-        result = timed_read_int("Select: ", &choice,
-                                INPUT_WARN_SEC, INPUT_TIMEOUT_SEC);
+        // 관리자 모드: 타임아웃 없이 입력 대기
+        result = timed_read_int("Select: ",
+                                &choice,
+                                0,   // no warn
+                                0);  // no timeout
 
-        if (result == INPUT_TIMEOUT) {
-            printf("\nTimeout. Back to admin menu.\n\n");
-            return;
-        }
         if (result == INPUT_INVALID) {
-            printf("Invalid input. Please enter number.\n\n");
+            printf("Invalid input.\n\n");
             continue;
         }
 
         switch (choice) {
         case 0:
-            printf("\nBack to admin menu.\n\n");
+            printf("\nBack to admin main menu.\n\n");
             return;
         case 1:
-            show_order_log();
+            show_all_orders();
             break;
-        case 2:
-            do_refund();
+        case 2: {
+            int order_no;
+            int r = timed_read_int("Enter order number: ",
+                                   &order_no,
+                                   0,   // no warn
+                                   0);  // no timeout
+            if (r == INPUT_INVALID) {
+                printf("Invalid input.\n\n");
+                break;
+            }
+            show_order_by_number(order_no);
+            break;
+        }
+        case 3:
+            do_refund_flow();
             break;
         default:
-            printf("No such menu.\n\n");
+            printf("Please select 0~3.\n\n");
             break;
         }
     }
