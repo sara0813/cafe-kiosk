@@ -12,9 +12,12 @@ CFLAGS = -Wall -Wextra -std=c11 -Iinclude
 SRCS = \
     src/main.c \
     src/user.c \
+    src/user_screen.c \
+    src/user_order.c \
     src/menu.c \
     src/cart.c \
     src/payment.c \
+    src/payment_extra.c \
     src/price.c \
     src/order_log.c \
     src/input.c \
@@ -30,6 +33,7 @@ SRCS = \
     src/admin_stock.c \
     src/admin_refund.c \
     src/stock.c
+
 
 OBJS   = $(SRCS:.c=.o)
 
